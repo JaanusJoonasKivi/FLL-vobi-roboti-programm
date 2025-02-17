@@ -1,0 +1,206 @@
+import motor, motor_pair, runloop, color_sensor, asyncio
+from hub import motion_sensor, port, button, light_matrix, sound, light
+
+varvi_andm = {}
+missiooni_arv = 4
+kalib_tehtud = False
+ # sentimeetrites ratta diameeter
+RATTA_D = 5.6
+RATASTE_VAH_KAUGUS = 8 #8 # sentimeetrites rataste vaheline kaugus
+motor_pair.pair(motor_pair.PAIR_1, port.A, port.B)
+
+# kasutame selleks et arvutada 4dimensioonis asuva kolmnurga hüpotenuusi
+def kaugus_ruudus(cal_punkt, moot_puntk):
+    kaugus_r = []
+    for i in range(4):
+        kaugus_r.append((moot_puntk[i] - cal_punkt[i])**2)
+    return sum(kaugus_r)
+
+# esimese mootori paari sõitmis def et mul oleks lihtsam mootoreid liikuma panna kuna spike asi on kolmerinevat kutsungit mis ei meeldinud mulle
+async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False):
+    if stop:
+        motor_pair.stop(motor_pair.PAIR_1)
+    elif kraadid == 0:
+        motor_pair.move(motor_pair.PAIR_1, pooramine, velocity=kiirus)
+    else:
+        await motor_pair.move_for_degrees(motor_pair.PAIR_1,kraadid, pooramine,velocity=kiirus)#,acceleration=kiirendus)
+
+# ksutab mootori kraade et pöörata võimalikult täpselt
+# 100% tähendab et parem rattas pöörab ainsan, 50% tähendab et mõlemad põõravad ja 0% tähendab et vasak rattas pöörab(poor_prots_ratas_vask_par)
+async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglustus=1000, kiirus=300):
+    """
+    Arvutab ja liigutab roboti rattaid pöörde teostamiseks.
+
+    :param poor_kraadid: Roboti pöördenurk kraadides.
+    :param poor_prots_ratas_vask_par: Parema ratta pööramise protsent (0-100).
+    :param kiirendus: Mootori kiirenduse väärtus (valikuline, vaikimisi 10).
+    :param aeglustus: Mootori aeglustuse väärtus (valikuline, vaikimisi 10).
+    :param kiirus: Mootorite maksimaalne kiirus (vaikimisi 550).
+    """
+
+    # Arvuta rataste pöörlemine kraadides
+    pöörde_pikkus = 3.14*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
+    mootori_kraadid = pöörde_pikkus/(3.14*RATTA_D*(1/360))
+    parem_ratta_poor = round(mootori_kraadid*vas_mot/100)
+    vasak_ratta_poor = round((mootori_kraadid*par_mot/100))
+    print(parem_ratta_poor, vasak_ratta_poor)
+
+    # Kontrolli, kas ratas peab pöörlema, ja teosta liikumine
+    if (parem_ratta_poor != 0 and vasak_ratta_poor != 0):
+        # Käivita parema ja vasaku ratta mootor
+        motor.run_for_degrees(port.A, parem_ratta_poor,kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.B, vasak_ratta_poor,kiirus, acceleration=kiirendus, deceleration=aeglustus)
+
+async def varvi_kalib():
+    global varvi_andm, kalib_tehtud
+    for i in range(1, missiooni_arv+1):
+        light_matrix.write(str(i))
+        while not button.pressed(button.LEFT):
+            await runloop.sleep_ms(10)
+        while button.pressed(button.LEFT):
+            await runloop.sleep_ms(10)
+        punane_kogu_sum = 0
+        roheline_kogu_sum = 0
+        sinine_kogu_sum = 0
+        tugevus_kogu_sum = 0
+        for j in range(10):
+            punane, roheline, sinine, tugevus = color_sensor.rgbi(port.D)
+            punane_kogu_sum += punane
+            roheline_kogu_sum += roheline
+            sinine_kogu_sum += sinine
+            tugevus_kogu_sum += tugevus
+            await runloop.sleep_ms(100)
+
+        punane_kesk = punane_kogu_sum/10
+        roheline_kesk = roheline_kogu_sum/10
+        sinine_kesk = sinine_kogu_sum/10
+        tugevus_kesk = tugevus_kogu_sum/10
+        varvi_andm[i] = [punane_kesk,roheline_kesk ,sinine_kesk ,tugevus_kesk]
+
+    light_matrix.write("ok?")
+    while True:
+        if button.pressed(button.RIGHT):
+            kalib_tehtud = True
+            break
+        elif button.pressed(button.LEFT):
+            kalib_tehtud = False
+            break
+    while button.pressed(button.LEFT) or button.pressed(button.RIGHT):
+        await runloop.sleep_ms(10)
+
+# tuvastab mis värvi moodul on peal kasutab vektori arvutust et teha kindlaks milline mooduli värvi vektori tulemus on lähim
+def varvi_tuvastus():
+    varv = color_sensor.rgbi(port.D)
+    ruut_vaartused = []
+    for i in varvi_andm.keys():
+        ruut_vaartused.append(kaugus_ruudus(varvi_andm[i], varv))
+
+    return ruut_vaartused.index(min(ruut_vaartused))+1
+
+async def soit_1():
+    # positiivne pooramine on vasakule!!!
+    await paar1_soitmine(0, 450, 200)
+    await pooramine(-39)
+    #algussättimne
+    await paar1_soitmine(0, 350, 1150)
+    await motor.run_for_degrees(port.F, 100, 1000)
+    await paar1_soitmine(0, 300, -50)
+    await pooramine(96)
+    #lineup haile
+    await paar1_soitmine(0, 550, 470)
+    await paar1_soitmine(0, 550, -400)
+    #lineup korallile
+    await pooramine(-145)
+    await paar1_soitmine(0, 550, -380)
+    await motor.run_for_degrees(port.E, -100, 1000)
+    await runloop.sleep_ms(1000)
+    await paar1_soitmine(0, 350, 300)
+    await pooramine(55)
+    await paar1_soitmine(0, 1050, -1500)
+async def soit_2():
+    #sõidab end paika laevaga
+    await paar1_soitmine(0, 550, -275)
+    await pooramine(100)
+    await paar1_soitmine(0, 550, 875)
+    await pooramine(-62)
+    await paar1_soitmine(0, 335, 760)
+    await motor.run_for_degrees(port.F, 150, 100)
+    #viib selle punase eluka ära
+    await paar1_soitmine(0, 500 , -300)
+    await pooramine(-120)
+    await paar1_soitmine(0, 550, 400)
+    await motor.run_for_degrees(port.F, 150, -60, stop = motor.HOLD)
+    #läheb teeb selle lillega üli
+    await paar1_soitmine(0, 550, -715)
+    await pooramine(17)
+    await paar1_soitmine(0, 550, -900)
+    await motor.run_for_degrees(port.E, 150, 110, stop = motor.BRAKE)
+    #mere näidis misiganes see ka poleks
+    await paar1_soitmine(0, 150, 300)
+    await pooramine(-32)
+    await paar1_soitmine(0, 550, -750)
+    await pooramine(5)
+    await motor.run_for_degrees(port.E, 150, -70, stop = motor.HOLD)
+    await paar1_soitmine(0, 550, 2000)
+
+async def soit_3():
+    print("aaaaaa")
+    await paar1_soitmine(0, 550, 1040)
+    await pooramine(41)
+    await paar1_soitmine(0, 550, 1400)
+    await paar1_soitmine(0, 400, -345)
+    await pooramine(-47)
+    await paar1_soitmine(0, 550, 1860)
+    await pooramine(-45)
+    await paar1_soitmine(0, 200, -500)
+    await paar1_soitmine(0, 300, 180)
+    await pooramine(133)
+    #await paar1_soitmine(0, 400, 250)
+    #await pooramine(25)
+    await paar1_soitmine(0, 550, 700)
+    await pooramine(-30)
+    await paar1_soitmine(0, 550, 250)
+    await motor.run_for_degrees(port.E, 90, 550)
+    await paar1_soitmine(10, 550, -2000)
+
+
+async def soit_4():
+    await paar1_soitmine(0, 100, -430)
+    await paar1_soitmine(0, 300, 230)
+    await pooramine(-140)
+    await paar1_soitmine(0, 300, 1150)
+    await pooramine(-93)
+    await paar1_soitmine(0, 700, 1200)
+    await paar1_soitmine(0, 300, -700)
+    await pooramine(-90)
+    await paar1_soitmine(0, 300, -250)
+    await pooramine(43)
+    await paar1_soitmine(0, 300, -1050)
+    await paar1_soitmine(0, 300, 500)
+
+# peamine meetod mis kasutab teisi meetodeid et lahendada ülessandeid vaatab kas värvid on kalibreeritud ja kui ei ole siis kalibreerib ära
+async def soidu_tuvastus():
+    while True:
+        #kontrollib kas on kalibreeritud
+        if kalib_tehtud:
+            #kontrollib milline missioon on või kas moodul puudub
+            if (varvi_tuvastus() == 0):
+                    light_matrix.write(str(0))
+            if (varvi_tuvastus() == 1):
+                light_matrix.write(str(1))
+                    #await soit_1()
+            if (varvi_tuvastus() == 2):
+                    light_matrix.write(str(2))
+                    await soit_2()
+            if (varvi_tuvastus() == 3):
+                    light_matrix.write(str(3))
+            if (varvi_tuvastus() == 4):
+                    light_matrix.write(str(4))
+            if (varvi_tuvastus() == 5):
+                    light_matrix.write(str(5))
+        # kui ei ole kalibreeritud siis kalibreerib
+        else:
+            await varvi_kalib()
+runloop.run(soit_2())
+#pooramine(90)
+#motor.run(port.A ,-550)
