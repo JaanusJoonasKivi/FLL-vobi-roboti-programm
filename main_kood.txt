@@ -29,27 +29,45 @@ async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False):
 # 100% tähendab et parem rattas pöörab ainsan, 50% tähendab et mõlemad põõravad ja 0% tähendab et vasak rattas pöörab(poor_prots_ratas_vask_par)
 async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglustus=1000, kiirus=300):
     """
-    Arvutab ja liigutab roboti rattaid pöörde teostamiseks.
+    arvutab por_kraadide järgi mitu kraadi peavad mootorid liikuma soovitud nurga saamiseks
 
-    :param poor_kraadid: Roboti pöördenurk kraadides.
-    :param poor_prots_ratas_vask_par: Parema ratta pööramise protsent (0-100).
-    :param kiirendus: Mootori kiirenduse väärtus (valikuline, vaikimisi 10).
-    :param aeglustus: Mootori aeglustuse väärtus (valikuline, vaikimisi 10).
-    :param kiirus: Mootorite maksimaalne kiirus (vaikimisi 550).
+        :arvutab alguses mitu kraadi kumbki mootor pöörama peab
+        :pärast kontrollib kas on 50 50 pööre kui on siis paneb tegema
+        :kontrollib kui oalju on vaja vasakut ja paremat rattast pöörata ja arvutab aja järgi välja nende pöörde kiiruse (pikem pöörde tegev rattas pöörab ette antud kiiruse järgi)
+        :kui mingil põhjusel on vasaku ja parema ratta % töötamine valesti antud siis viskab ette vea teate
     """
 
-    # Arvuta rataste pöörlemine kraadides
+    # Arvuta rataste pööramise kraadides
     pöörde_pikkus = 3.14*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
     mootori_kraadid = pöörde_pikkus/(3.14*RATTA_D*(1/360))
-    parem_ratta_poor = round(mootori_kraadid*vas_mot/100)
-    vasak_ratta_poor = round((mootori_kraadid*par_mot/100))
-    print(parem_ratta_poor, vasak_ratta_poor)
+    parem_ratta_poor = mootori_kraadid*vas_mot/100
+    vasak_ratta_poor = mootori_kraadid*par_mot/100
 
-    # Kontrolli, kas ratas peab pöörlema, ja teosta liikumine
+    #kui mõlemad on 50 50 siis paneb lihtsalt liikuma
+    if(vas_mot == 50 & par_mot == 50):
+        motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.B, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+
+    # kui vasak mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse ja kontrollib et mõlema % oleks 100%
+    elif(vas_mot < 50 & par_mot > 50 & vas_mot + par_mot == 100):
+        par_mot_aeg = parem_ratta_poor/kiirus
+        vasak_ratta_kiirus = vasak_ratta_poor/par_mot_aeg
+        motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.B, round(vasak_ratta_poor),round(vasak_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
+    
+    # kui parem mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse
+    elif(vas_mot > 50 & par_mot < 50 & vas_mot + par_mot == 100):
+        vas_mot_aeg = vasak_ratta_poor/kiirus
+        parem_ratta_kiirus = parem_ratta_poor/vas_mot_aeg
+        motor.run_for_degrees(port.A, round(parem_ratta_poor),round(parem_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.B, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+    
+    # kui % on valesti pandud ja mootorid ei saa pöörata nt on 46 ja 27 
+    else:
+        print("võimsused valesti jaotatud")
     if (parem_ratta_poor != 0 and vasak_ratta_poor != 0):
         # Käivita parema ja vasaku ratta mootor
-        motor.run_for_degrees(port.A, parem_ratta_poor,kiirus, acceleration=kiirendus, deceleration=aeglustus)
-        await motor.run_for_degrees(port.B, vasak_ratta_poor,kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        print()
 
 async def varvi_kalib():
     global varvi_andm, kalib_tehtud
