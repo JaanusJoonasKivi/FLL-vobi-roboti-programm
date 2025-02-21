@@ -2,7 +2,7 @@ import motor, motor_pair, runloop, color_sensor, asyncio
 from hub import motion_sensor, port, button, light_matrix, sound, light
 
 varvi_andm = {}
-missiooni_arv = 4
+missiooni_arv = 3
 kalib_tehtud = False
  # sentimeetrites ratta diameeter
 RATTA_D = 5.6
@@ -27,10 +27,12 @@ async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False):
 
 # ksutab mootori kraade et pöörata võimalikult täpselt
 # 100% tähendab et parem rattas pöörab ainsan, 50% tähendab et mõlemad põõravad ja 0% tähendab et vasak rattas pöörab(poor_prots_ratas_vask_par)
-async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglustus=1000, kiirus=300):
+async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglustus=1000, kiirus=200):
     """
     arvutab por_kraadide järgi mitu kraadi peavad mootorid liikuma soovitud nurga saamiseks
 
+        :positiivne pooramine on vasakule!!!
+        :protsentide jaotamine kahtlane 50 50 töötab kõige paremini
         :arvutab alguses mitu kraadi kumbki mootor pöörama peab
         :pärast kontrollib kas on 50 50 pööre kui on siis paneb tegema
         :kontrollib kui oalju on vaja vasakut ja paremat rattast pöörata ja arvutab aja järgi välja nende pöörde kiiruse (pikem pöörde tegev rattas pöörab ette antud kiiruse järgi)
@@ -40,23 +42,23 @@ async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglus
     # Arvuta rataste pööramise kraadides
     pöörde_pikkus = 3.14*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
     mootori_kraadid = pöörde_pikkus/(3.14*RATTA_D*(1/360))
-    parem_ratta_poor = mootori_kraadid*vas_mot/100
-    vasak_ratta_poor = mootori_kraadid*par_mot/100
+    parem_ratta_poor = mootori_kraadid*par_mot/100
+    vasak_ratta_poor = mootori_kraadid*vas_mot/100
 
     #kui mõlemad on 50 50 siis paneb lihtsalt liikuma
-    if(vas_mot == 50 & par_mot == 50):
+    if(vas_mot == 50 and par_mot == 50):
         motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
         await motor.run_for_degrees(port.B, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
 
     # kui vasak mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse ja kontrollib et mõlema % oleks 100%
-    elif(vas_mot < 50 & par_mot > 50 & vas_mot + par_mot == 100):
+    elif(vas_mot < 50 and par_mot > 50 and vas_mot + par_mot == 100):
         par_mot_aeg = parem_ratta_poor/kiirus
         vasak_ratta_kiirus = vasak_ratta_poor/par_mot_aeg
-        motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
-        await motor.run_for_degrees(port.B, round(vasak_ratta_poor),round(vasak_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
+        motor.run_for_degrees(port.B, round(vasak_ratta_poor),round(vasak_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
     
     # kui parem mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse
-    elif(vas_mot > 50 & par_mot < 50 & vas_mot + par_mot == 100):
+    elif(vas_mot > 50 and par_mot < 50 and vas_mot + par_mot == 100):
         vas_mot_aeg = vasak_ratta_poor/kiirus
         parem_ratta_kiirus = parem_ratta_poor/vas_mot_aeg
         motor.run_for_degrees(port.A, round(parem_ratta_poor),round(parem_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
@@ -65,9 +67,6 @@ async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglus
     # kui % on valesti pandud ja mootorid ei saa pöörata nt on 46 ja 27 
     else:
         print("võimsused valesti jaotatud")
-    if (parem_ratta_poor != 0 and vasak_ratta_poor != 0):
-        # Käivita parema ja vasaku ratta mootor
-        print()
 
 async def varvi_kalib():
     global varvi_andm, kalib_tehtud
@@ -112,11 +111,13 @@ def varvi_tuvastus():
     ruut_vaartused = []
     for i in varvi_andm.keys():
         ruut_vaartused.append(kaugus_ruudus(varvi_andm[i], varv))
-
-    return ruut_vaartused.index(min(ruut_vaartused))+1
+    
+    if(min(ruut_vaartused)<(50*50*50*50)):
+        return ruut_vaartused.index(min(ruut_vaartused))+1
+    else:
+        return 0
 
 async def soit_1():
-    # positiivne pooramine on vasakule!!!
     await paar1_soitmine(0, 450, 200)
     await pooramine(-39)
     #algussättimne
@@ -136,51 +137,23 @@ async def soit_1():
     await pooramine(55)
     await paar1_soitmine(0, 1050, -1500)
 async def soit_2():
-    #sõidab end paika laevaga
-    await paar1_soitmine(0, 550, -275)
-    await pooramine(100)
-    await paar1_soitmine(0, 550, 875)
-    await pooramine(-62)
-    await paar1_soitmine(0, 335, 760)
-    await motor.run_for_degrees(port.F, 150, 100)
-    #viib selle punase eluka ära
-    await paar1_soitmine(0, 500 , -300)
-    await pooramine(-120)
-    await paar1_soitmine(0, 550, 400)
-    await motor.run_for_degrees(port.F, 150, -60, stop = motor.HOLD)
-    #läheb teeb selle lillega üli
-    await paar1_soitmine(0, 550, -715)
-    await pooramine(17)
-    await paar1_soitmine(0, 550, -900)
-    await motor.run_for_degrees(port.E, 150, 110, stop = motor.BRAKE)
-    #mere näidis misiganes see ka poleks
-    await paar1_soitmine(0, 150, 300)
-    await pooramine(-32)
-    await paar1_soitmine(0, 550, -750)
-    await pooramine(5)
-    await motor.run_for_degrees(port.E, 150, -70, stop = motor.HOLD)
-    await paar1_soitmine(0, 550, 2000)
+    #läheb paadi purje ja aarde laegast varastama
+    await paar1_soitmine(0, 650, 900)
+    await pooramine(-45)
+    await paar1_soitmine(0, 650, 300)
+    await pooramine(-50)
+    await paar1_soitmine(0, 400, 700)
+    await motor.run_for_degrees(port.F, 105, 550)
+    await paar1_soitmine(0, 650, -200)
+    # viib sukelduja ära
+    await pooramine(-96)
+    await paar1_soitmine(0, 650, -650)
+    await motor.run_for_degrees(port.E, -90, 550)
+    await paar1_soitmine(5, 1000, 1300)
+    print("tee paadi asi ära")
 
 async def soit_3():
-    print("aaaaaa")
-    await paar1_soitmine(0, 550, 1040)
-    await pooramine(41)
-    await paar1_soitmine(0, 550, 1400)
-    await paar1_soitmine(0, 400, -345)
-    await pooramine(-47)
-    await paar1_soitmine(0, 550, 1860)
-    await pooramine(-45)
-    await paar1_soitmine(0, 200, -500)
-    await paar1_soitmine(0, 300, 180)
-    await pooramine(133)
-    #await paar1_soitmine(0, 400, 250)
-    #await pooramine(25)
-    await paar1_soitmine(0, 550, 700)
-    await pooramine(-30)
-    await paar1_soitmine(0, 550, 250)
-    await motor.run_for_degrees(port.E, 90, 550)
-    await paar1_soitmine(10, 550, -2000)
-
+    print("mõtle 3 sõit välja")
 
 async def soit_4():
     await paar1_soitmine(0, 100, -430)
@@ -204,21 +177,28 @@ async def soidu_tuvastus():
             #kontrollib milline missioon on või kas moodul puudub
             if (varvi_tuvastus() == 0):
                     light_matrix.write(str(0))
+                    await runloop.sleep_ms(20)
             if (varvi_tuvastus() == 1):
                 light_matrix.write(str(1))
-                    #await soit_1()
+                if(button.pressed(button.LEFT)):
+                    await soit_1()
             if (varvi_tuvastus() == 2):
                     light_matrix.write(str(2))
-                    await soit_2()
+                    if(button.pressed(button.LEFT)):
+                        await soit_2()
             if (varvi_tuvastus() == 3):
                     light_matrix.write(str(3))
+                    if(button.pressed(button.LEFT)):
+                        print('veel üks sõit?')
             if (varvi_tuvastus() == 4):
                     light_matrix.write(str(4))
+                    if(button.pressed(button.LEFT)):
+                        print('veel üks soit?')
             if (varvi_tuvastus() == 5):
                     light_matrix.write(str(5))
+                    if(button.pressed(button.LEFT)):
+                        print('veel üks soit?')
         # kui ei ole kalibreeritud siis kalibreerib
         else:
             await varvi_kalib()
 runloop.run(soit_2())
-#pooramine(90)
-#motor.run(port.A ,-550)
