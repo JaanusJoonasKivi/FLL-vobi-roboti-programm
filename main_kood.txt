@@ -6,8 +6,8 @@ missiooni_arv = 3
 kalib_tehtud = False
  # sentimeetrites ratta diameeter
 RATTA_D = 5.6
-RATASTE_VAH_KAUGUS = 8 #8 # sentimeetrites rataste vaheline kaugus
-motor_pair.pair(motor_pair.PAIR_1, port.A, port.B)
+RATASTE_VAH_KAUGUS = 11.3 #8 # sentimeetrites rataste vaheline kaugus
+motor_pair.pair(motor_pair.PAIR_1, port.B, port.A)
 
 # kasutame selleks et arvutada 4dimensioonis asuva kolmnurga hüpotenuusi
 def kaugus_ruudus(cal_punkt, moot_puntk):
@@ -20,10 +20,10 @@ def kaugus_ruudus(cal_punkt, moot_puntk):
 async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False):
     if stop:
         motor_pair.stop(motor_pair.PAIR_1)
-    elif kraadid == 0:
+    if kraadid == 0:
         motor_pair.move(motor_pair.PAIR_1, pooramine, velocity=kiirus)
     else:
-        await motor_pair.move_for_degrees(motor_pair.PAIR_1,kraadid, pooramine,velocity=kiirus)#,acceleration=kiirendus)
+        await motor_pair.move_for_degrees(motor_pair.PAIR_1,round(kraadid/0.6), pooramine,velocity=kiirus)#,acceleration=kiirendus)
 
 # ksutab mootori kraade et pöörata võimalikult täpselt
 # 100% tähendab et parem rattas pöörab ainsan, 50% tähendab et mõlemad põõravad ja 0% tähendab et vasak rattas pöörab(poor_prots_ratas_vask_par)
@@ -42,27 +42,27 @@ async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglus
     # Arvuta rataste pööramise kraadides
     pöörde_pikkus = 3.14*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
     mootori_kraadid = pöörde_pikkus/(3.14*RATTA_D*(1/360))
-    parem_ratta_poor = mootori_kraadid*par_mot/100
-    vasak_ratta_poor = mootori_kraadid*vas_mot/100
+    parem_ratta_poor = (mootori_kraadid*par_mot/100)/0.6
+    vasak_ratta_poor = (mootori_kraadid*vas_mot/100)/0.6
 
     #kui mõlemad on 50 50 siis paneb lihtsalt liikuma
     if(vas_mot == 50 and par_mot == 50):
-        motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
-        await motor.run_for_degrees(port.B, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        motor.run_for_degrees(port.B, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.A, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
 
     # kui vasak mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse ja kontrollib et mõlema % oleks 100%
     elif(vas_mot < 50 and par_mot > 50 and vas_mot + par_mot == 100):
         par_mot_aeg = parem_ratta_poor/kiirus
         vasak_ratta_kiirus = vasak_ratta_poor/par_mot_aeg
-        motor.run_for_degrees(port.B, round(vasak_ratta_poor),round(vasak_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
-        await motor.run_for_degrees(port.A, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        motor.run_for_degrees(port.A, round(vasak_ratta_poor),round(vasak_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.B, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
     
     # kui parem mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse
     elif(vas_mot > 50 and par_mot < 50 and vas_mot + par_mot == 100):
         vas_mot_aeg = vasak_ratta_poor/kiirus
         parem_ratta_kiirus = parem_ratta_poor/vas_mot_aeg
-        motor.run_for_degrees(port.A, round(parem_ratta_poor),round(parem_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
-        await motor.run_for_degrees(port.B, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
+        motor.run_for_degrees(port.B, round(parem_ratta_poor),round(parem_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
+        await motor.run_for_degrees(port.A, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
     
     # kui % on valesti pandud ja mootorid ei saa pöörata nt on 46 ja 27 
     else:
@@ -138,7 +138,8 @@ async def soit_1():
     await paar1_soitmine(0, 1050, -1500)
 async def soit_2():
     #läheb paadi purje ja aarde laegast varastama
-    await paar1_soitmine(0, 650, 900)
+    await paar1_soitmine(0, 1000, 900)
+
     await pooramine(-45)
     await paar1_soitmine(0, 650, 300)
     await pooramine(-50)
@@ -168,6 +169,9 @@ async def soit_4():
     await pooramine(43)
     await paar1_soitmine(0, 300, -1050)
     await paar1_soitmine(0, 300, 500)
+
+async def testid():
+    await pooramine(90)
 
 # peamine meetod mis kasutab teisi meetodeid et lahendada ülessandeid vaatab kas värvid on kalibreeritud ja kui ei ole siis kalibreerib ära
 async def soidu_tuvastus():
