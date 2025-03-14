@@ -6,7 +6,7 @@ missiooni_arv = 3
 kalib_tehtud = False
  # sentimeetrites ratta diameeter
 RATTA_D = 5.6
-RATASTE_VAH_KAUGUS = 11.3 #8 # sentimeetrites rataste vaheline kaugus
+RATASTE_VAH_KAUGUS = 11.3 #11.3 sentimeetrites rataste vaheline kaugus
 motor_pair.pair(motor_pair.PAIR_1, port.B, port.A)
 
 # kasutame selleks et arvutada 4dimensioonis asuva kolmnurga hüpotenuusi
@@ -59,15 +59,15 @@ async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=500, aeglust
         vasak_ratta_kiirus = vasak_ratta_poor/par_mot_aeg
         motor.run_for_degrees(port.A, round(vasak_ratta_poor),round(vasak_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
         await motor.run_for_degrees(port.B, round(parem_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
-    
+
     # kui parem mootor pöörab % vähem siis arvutab parema mootori järgi kiiruse
     elif(vas_mot > 50 and par_mot < 50 and vas_mot + par_mot == 100):
         vas_mot_aeg = vasak_ratta_poor/kiirus
         parem_ratta_kiirus = parem_ratta_poor/vas_mot_aeg
         motor.run_for_degrees(port.B, round(parem_ratta_poor),round(parem_ratta_kiirus), acceleration=kiirendus, deceleration=aeglustus)
         await motor.run_for_degrees(port.A, round(vasak_ratta_poor),kiirus, acceleration=kiirendus, deceleration=aeglustus)
-    
-    # kui % on valesti pandud ja mootorid ei saa pöörata nt on 46 ja 27 
+
+    # kui % on valesti pandud ja mootorid ei saa pöörata nt on 46 ja 27
     else:
         print("võimsused valesti jaotatud")
 
@@ -114,7 +114,7 @@ def varvi_tuvastus():
     ruut_vaartused = []
     for i in varvi_andm.keys():
         ruut_vaartused.append(kaugus_ruudus(varvi_andm[i], varv))
-    
+
     if(min(ruut_vaartused)<(50*50+50*50+50*50+50*50)):
         return ruut_vaartused.index(min(ruut_vaartused))+1
     else:
@@ -161,15 +161,20 @@ async def soit_3():
     await paar1_soitmine(0, 1050, 100)
     await pooramine(65)
     await paar1_soitmine(0, 1050, 1400)
-    await paar1_soitmine(0, 1050, -300)
+    await paar1_soitmine(0, 1050, -350)
     await pooramine(45)
     await paar1_soitmine(0, 1050, 1800)
     await pooramine(50)
-    await paar1_soitmine(0, 1050, -500)
-    await paar1_soitmine(0, 1050, 1000)
+    await paar1_soitmine(0, 1050, -700)
+    await paar1_soitmine(0, 1050, 1100)
 
 async def soit_4():
-    print("ei ole sõit 4-ja")
+    await paar1_soitmine(0, 1050, 200)
+    await pooramine(-54)
+    await paar1_soitmine(2, 1050, 2000)
+    await pooramine(58)
+    await paar1_soitmine(0, 1050, 800)
+    await paar1_soitmine(0, 1050, -530)
 
 async def testid():
     await pooramine(90)
@@ -209,4 +214,4 @@ async def soidu_tuvastus():
 
 #motor.run_to_absolute_position(port.E, 315, -300)
 #runloop.run(paar1_soitmine(0, -1050, -4500))
-runloop.run(soit_3())
+runloop.run(soit_4())
