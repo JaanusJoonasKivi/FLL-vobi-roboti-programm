@@ -159,11 +159,11 @@ async def soit_2():
 
 async def soit_3():
     await paar1_soitmine(0, 1050, 100)
-    await pooramine(60)
+    await pooramine(65)
     await paar1_soitmine(0, 1050, 1400)
     await paar1_soitmine(0, 1050, -300)
     await pooramine(45)
-    await paar1_soitmine(0, 1050, 1700)
+    await paar1_soitmine(0, 1050, 1800)
     await pooramine(50)
     await paar1_soitmine(0, 1050, -500)
     await paar1_soitmine(0, 1050, 1000)
