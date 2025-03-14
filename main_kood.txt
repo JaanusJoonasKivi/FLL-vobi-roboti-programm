@@ -1,6 +1,5 @@
-import motor, motor_pair, runloop, color_sensor, asyncio
-from hub import motion_sensor, port, button, light_matrix, sound, light
-from time import sleep
+import motor, motor_pair, runloop, color_sensor
+from hub import port, button, light_matrix
 
 varvi_andm = {}
 missiooni_arv = 3
@@ -18,17 +17,20 @@ def kaugus_ruudus(cal_punkt, moot_puntk):
     return sum(kaugus_r)
 
 # esimese mootori paari sõitmis def et mul oleks lihtsam mootoreid liikuma panna kuna spike asi on kolmerinevat kutsungit mis ei meeldinud mulle
-async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False):
+async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False, aeglustus=750):
     if stop:
         motor_pair.stop(motor_pair.PAIR_1)
     if kraadid == 0:
         motor_pair.move(motor_pair.PAIR_1, pooramine, velocity=kiirus)
     else:
-        await motor_pair.move_for_degrees(motor_pair.PAIR_1,round(kraadid/0.6), pooramine,velocity=kiirus)#,acceleration=kiirendus)
+        await motor_pair.move_for_degrees(motor_pair.PAIR_1, round(kraadid/0.6),pooramine,velocity=kiirus ,acceleration=750, deceleration=aeglustus)
+        """
+        motor.run_for_degrees(port.B, round(kraadid/0.6),kiirus ,acceleration=1500, deceleration=1500)
+        await motor.run_for_degrees(port.A,round(kraadid/0.6),kiirus*-1 ,acceleration=1500, deceleration=1500)"""
 
 # ksutab mootori kraade et pöörata võimalikult täpselt
 # 100% tähendab et parem rattas pöörab ainsan, 50% tähendab et mõlemad põõravad ja 0% tähendab et vasak rattas pöörab(poor_prots_ratas_vask_par)
-async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglustus=1000, kiirus=700):
+async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=500, aeglustus=500, kiirus=1050):
     """
     arvutab por_kraadide järgi mitu kraadi peavad mootorid liikuma soovitud nurga saamiseks
 
@@ -42,7 +44,7 @@ async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=1000, aeglus
 
     # Arvuta rataste pööramise kraadides
     pöörde_pikkus = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
-    mootori_kraadid = pöörde_pikkus/(3.14*RATTA_D*(1/360))
+    mootori_kraadid = pöörde_pikkus/(3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679*RATTA_D*(1/360))
     parem_ratta_poor = (mootori_kraadid*par_mot/100)/0.6
     vasak_ratta_poor = (mootori_kraadid*vas_mot/100)/0.6
 
@@ -122,7 +124,7 @@ async def soit_1():
     await paar1_soitmine(0, 1050, 200)
     await pooramine(42)
     #algussättimne
-    await paar1_soitmine(0, 900, 1075)
+    await paar1_soitmine(0, 1050, 1075)
     await motor.run_for_degrees(port.F, 100, 1000)
     #await paar1_soitmine(0, 800, -100)
     await pooramine(-96)
@@ -143,24 +145,28 @@ async def soit_1():
 async def soit_2():
     motor.stop(port.E)
     #läheb paadi purje ja aarde laegast varastama
-    await paar1_soitmine(0, 1000, 900)
+    await paar1_soitmine(0, 1050, 910)
     await pooramine(47)
-    await paar1_soitmine(0, 650, 300)
-    await pooramine(50)
-    await paar1_soitmine(0, 1000, 700)
-    await motor.run_for_degrees(port.F, 105, 550)
+    await paar1_soitmine(0, 1050, 300)
+    await pooramine(47)
+    await paar1_soitmine(0, 950, 950, aeglustus=300)
+    await motor.run_for_degrees(port.F, 105, 350)
     await runloop.sleep_ms(1000)
-    await motor.run_for_degrees(port.E, -75, 950)
-    sleep(0.2)
-    await motor.run_for_degrees(port.E, 75, 650)
-    await paar1_soitmine(0, 650, -200)
-    await paar1_soitmine(0, 650, -300)
-    await pooramine(-50)
-    await paar1_soitmine(0, 650, -300)
-    await paar1_soitmine(0, 1000, -900)
+    await motor.run_for_degrees(port.E, -75, 500)
+    await runloop.sleep_ms(1000)
+    await motor.run_for_degrees(port.E, 60, 300)
+    await paar1_soitmine(-13, -1050, 1750)
 
 async def soit_3():
-    print("mõtle 3 sõit välja")
+    await paar1_soitmine(0, 1050, 100)
+    await pooramine(60)
+    await paar1_soitmine(0, 1050, 1400)
+    await paar1_soitmine(0, 1050, -300)
+    await pooramine(45)
+    await paar1_soitmine(0, 1050, 1700)
+    await pooramine(50)
+    await paar1_soitmine(0, 1050, -500)
+    await paar1_soitmine(0, 1050, 1000)
 
 async def soit_4():
     print("ei ole sõit 4-ja")
@@ -202,5 +208,5 @@ async def soidu_tuvastus():
             await varvi_kalib()
 
 #motor.run_to_absolute_position(port.E, 315, -300)
-
-runloop.run(soit_1())
+#runloop.run(paar1_soitmine(0, -1050, -4500))
+runloop.run(soit_3())
