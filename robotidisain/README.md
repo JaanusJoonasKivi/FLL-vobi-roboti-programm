@@ -1,17 +1,5 @@
   # 1. moodul
-
-
-  ## Boonused
-
-
-  ## Probleemid
-
-
-  ## Miks sellise variandi tegime?
-
-
-  ## Muudatused
- **1. moodul (enne eelvooru)**
+ **1. moodul**
  
 See moodul korjab platsilt ühe krilli ja ühe proovidest, vabastab hai koopast ja lükkab üles
 korallipungad ning tuleb tagasi kodualasse
@@ -33,6 +21,18 @@ paigutamine platsil:
 
 <img src="roboti%20pildid/20250211_144552.jpg" alt="Alt Text" width="500">       <img src="roboti%20pildid/20250211_144557.jpg" alt="Alt Text" width="500">
 <img src="roboti%20pildid/20250211_144609.jpg" alt="Alt Text" width="500">
+
+  ## Boonused
+
+
+  ## Probleemid
+
+
+  ## Miks sellise variandi tegime?
+
+
+  ## Muudatused
+
 
   # 2. moodul
 **Uus (17.02.25) 2. moodul**
