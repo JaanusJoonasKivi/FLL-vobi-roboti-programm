@@ -1,58 +1,58 @@
- #1. moodul
+ # 1. moodul
 
 
-  **Boonused**
+  ## Boonused
 
 
-  **Probleemid**
+  ## Probleemid
 
 
-  **Miks sellise variandi tegime?**
+  ## Miks sellise variandi tegime?
+
+
+  ## Muudatused
+
+
+  # 2. moodul
+
+
+  ## Boonused
+
+
+  ## Probleemid
+
+
+  ## Miks sellise variandi tegime?** 
+
+
+  ## Muudatused
+
+
+  # 3. moodul
+
+
+  ## Boonused
+
+
+  ## Puudused
+
+
+  ## Miks sellise varindi tegime?
 
 
   **Muudatused**
 
 
-  **2. moodul**
+  # 4.moodul
 
 
-  **Boonused**
+  ## Boonused
 
 
-  **Probleemid**
+  ## Puudused
 
 
-  **Miks sellise variandi tegime?** 
-
-
-  **Muudatused**
-
-
-  **3. moodul**
-
-
-  **Boonused**
-
-
-  **Puudused**
-
-
-  **Miks sellise varindi tegime?**
-
-
-  **Muudatused**
-
-
-  **4.moodul**
-
-
-  **Boonused**
-
-
-  **Puudused**
-
-
-  **Miks sellise variandi tegime?**
+  ## Miks sellise variandi tegime?
 
 
   **Muudatused** 
