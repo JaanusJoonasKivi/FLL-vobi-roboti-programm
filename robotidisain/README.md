@@ -29,6 +29,12 @@ Punkte:
 
 Kui kaua võtab sõit aega: 17.01 (55 p), 17.48 (55 p), 17.32 (55 p)
 
+paigutamine platsil
+<img src="image-url" alt="Alt Text" width="300" height="200">
+![](https://github.com/EpicEst6313/FLL-vobi-roboti-programm/blob/main/20250211_144552.jpg)
+![](https://github.com/EpicEst6313/FLL-vobi-roboti-programm/blob/main/20250211_144557.jpg)
+![](https://github.com/EpicEst6313/FLL-vobi-roboti-programm/blob/main/20250211_144609.jpg)
+
   # 2. moodul
 **Uus (17.02.25) 2. moodul**
 
@@ -45,7 +51,6 @@ Miks on uus moodul parem kui selle eelmine versioon?
 	Küljes värvituvastuse toimimiseks spetsiaalne klots
 
 Algasend võistlusplatsil:
-
 
 
   ## Boonused
