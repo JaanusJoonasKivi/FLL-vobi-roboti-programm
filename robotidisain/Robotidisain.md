@@ -115,3 +115,6 @@ Ehitus kvaliteet on kehv, moodul ei töötanud. Pealegi oli seda väga raske pro
 
 
   ## Muudatused
+
+
+![test](https://drive.google.com/file/d/1iBMgmOASfIYK4jpipinbQNwxydI5zIna/view?usp=drive_link)
