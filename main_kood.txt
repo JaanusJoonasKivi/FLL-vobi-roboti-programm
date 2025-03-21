@@ -122,7 +122,7 @@ def varvi_tuvastus():
 
 async def soit_1():
     await paar1_soitmine(0, 1050, 200)
-    await pooramine(42)
+    await pooramine(40)
     #algussättimne
     await paar1_soitmine(0, 1050, 1075)
     await motor.run_for_degrees(port.F, 100, 1000)
@@ -130,9 +130,9 @@ async def soit_1():
     await pooramine(-96)
     #lineup haile
     await paar1_soitmine(0, 1050, 650)
-    await paar1_soitmine(0, 1050, -415)
+    await paar1_soitmine(0, 1050, -405)
     #lineup korallile
-    await pooramine(139)
+    await pooramine(145)
     await paar1_soitmine(0, 1050, -575)
     await motor.run_for_degrees(port.E, -100, 1000)
     await runloop.sleep_ms(500)
@@ -149,12 +149,12 @@ async def soit_2():
     await pooramine(47)
     await paar1_soitmine(0, 1050, 300)
     await pooramine(47)
-    await paar1_soitmine(0, 950, 950, aeglustus=300)
+    await paar1_soitmine(0, 1000, 1200, aeglustus=2000)
     await motor.run_for_degrees(port.F, 105, 350)
-    await runloop.sleep_ms(1000)
+    await runloop.sleep_ms(2000)
     await motor.run_for_degrees(port.E, -75, 500)
     await runloop.sleep_ms(1000)
-    await motor.run_for_degrees(port.E, 60, 300)
+    motor.run_for_degrees(port.E, 60, 150)
     await paar1_soitmine(-13, -1050, 1750)
 
 async def soit_3():
@@ -212,6 +212,6 @@ async def soidu_tuvastus():
         else:
             await varvi_kalib()
 
-#motor.run_to_absolute_position(port.E, 315, -300)
+#motor.run_to_absolute_position(port.E, 300, -300)
 #runloop.run(paar1_soitmine(0, -1050, -4500))
-runloop.run(soit_4())
+runloop.run(soit_2())
