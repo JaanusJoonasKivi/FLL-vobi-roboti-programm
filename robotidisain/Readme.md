@@ -1,5 +1,4 @@
-  * H1
-  * 1. moodul
+ #1. moodul
 
 
   **Boonused**
@@ -8,7 +7,7 @@
   **Probleemid**
 
 
-  **Miks tegime sellise variandi?**
+  **Miks sellise variandi tegime?**
 
 
   **Muudatused**
@@ -20,7 +19,7 @@
   **Boonused**
 
 
-  **Problemid**
+  **Probleemid**
 
 
   **Miks sellise variandi tegime?** 
@@ -38,7 +37,7 @@
   **Puudused**
 
 
-  **Miks sellise varaindi tegime?**
+  **Miks sellise varindi tegime?**
 
 
   **Muudatused**
@@ -56,4 +55,4 @@
   **Miks sellise variandi tegime?**
 
 
-  **Muudatused**
+  **Muudatused** 
