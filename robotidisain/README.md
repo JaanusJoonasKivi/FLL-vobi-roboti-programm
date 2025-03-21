@@ -1,5 +1,5 @@
   # 1. moodul
- **1. moodul**
+  ## Ehitus ja eesmärgid
  
 See moodul korjab platsilt ühe krilli ja ühe proovidest, vabastab hai koopast ja lükkab üles
 korallipungad ning tuleb tagasi kodualasse
@@ -35,6 +35,7 @@ paigutamine platsil:
 
 
   # 2. moodul
+  ## Ehitus ja eesmärgid
 **Uus (17.02.25) 2. moodul**
 
 Võtab kraakeni haardest kirstu, samal ajal tõstab masti, seejärel paneb robot Sukelduja korallrahu toele, tõstab õigepidiseks korallrahu.
@@ -73,6 +74,7 @@ Tegi liiga palju ülesandeid, mis muutus liiga keeruliseks, seetõttu ka ebatäp
 
 
   # 3. moodul
+  ## Ehitus ja eesmärgid
 
 
   ## Boonused
@@ -94,6 +96,7 @@ Ehitus kvaliteet on kehv, moodul ei töötanud. Pealegi oli seda väga raske pro
 
 
   # 4.moodul
+  ## Ehitus ja eesmärgid
 
 
   ## Boonused
@@ -109,6 +112,7 @@ Ehitus kvaliteet on kehv, moodul ei töötanud. Pealegi oli seda väga raske pro
 
 
    # 5. moodul?(Heiki palun seleta)
+   ## Ehitus ja eesmärgid
  
 
   ## Boonused
