@@ -1,4 +1,16 @@
   # 1. moodul
+
+
+  ## Boonused
+
+
+  ## Probleemid
+
+
+  ## Miks sellise variandi tegime?
+
+
+  ## Muudatused
  **1. moodul (enne eelvooru)**
  
 See moodul korjab platsilt ühe krilli ja ühe proovidest, vabastab hai koopast ja lükkab üles
@@ -16,19 +28,6 @@ Punkte:
 - 10 p (korrallrahu segmentide ära toomine ) + 20 p (korallipungad) + 20 p (Sukelduja ära toomine) + 20 p (hai koobast vabastamine) + 5 p (veeproov) = 55 p
 
 Kui kaua võtab sõit aega: 17.01 (55 p), 17.48 (55 p), 17.32 (55 p)
-
-
-  ## Boonused
-
-
-  ## Probleemid
-
-
-  ## Miks sellise variandi tegime?
-
-
-  ## Muudatused
-
 
   # 2. moodul
 **Uus (17.02.25) 2. moodul**
