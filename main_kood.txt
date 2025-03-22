@@ -1,50 +1,119 @@
-import motor, motor_pair, runloop, color_sensor
+import motor, motor_pair, runloop, color_sensor, math
 from hub import port, button, light_matrix
 
 varvi_andm = {}
-missiooni_arv = 3
+missiooni_arv = 4
 kalib_tehtud = False
- # sentimeetrites ratta diameeter
 RATTA_D = 5.6
-RATASTE_VAH_KAUGUS = 11.3 #11.3 sentimeetrites rataste vaheline kaugus
+RATASTE_VAH_KAUGUS = 11.3
+TEISENDUS_TEGUR = 0.6
 motor_pair.pair(motor_pair.PAIR_1, port.B, port.A)
 
-# kasutame selleks et arvutada 4dimensioonis asuva kolmnurga hüpotenuusi
-def kaugus_ruudus(cal_punkt, moot_puntk):
+def kaugus_ruudus(cal_punkt:list[int], moot_punkt:list[int]):
+    """
+    Arvutab 4-mõõtmelises ruumis asuva kolmnurga hüpotenuusi.
+    Kasutab kahe 4-mõõtmelise punkti vahelise kauguse ruudu leidmiseks Eukleidese meetodit.
+
+    ### Parameetrid:
+    - **cal_punkt** (`list[int]`):
+        4-elementiline arvude list, mis esindab kalibreerimispunkti koordinaate.
+        Kõik väärtused tõstetakse ruutu.
+
+    - **moot_punkt** (`list[int]`):
+        4-elementiline arvude list, mille väärtused saadakse värviandurilt tõstetakse ruutu.
+        Sellest lahutatakse maha 'cal_punkt', mis on ruutu tõstetud.
+
+    ### Tagastab:
+    - **int** – Kahe punkti vahelise kauguse 4 dimensioonis.
+
+    """
     kaugus_r = []
     for i in range(4):
-        kaugus_r.append((moot_puntk[i] - cal_punkt[i])**2)
+        kaugus_r.append((moot_punkt[i] - cal_punkt[i]) ** 2)
     return sum(kaugus_r)
 
-# esimese mootori paari sõitmis def et mul oleks lihtsam mootoreid liikuma panna kuna spike asi on kolmerinevat kutsungit mis ei meeldinud mulle
-async def paar1_soitmine(pooramine, kiirus, kraadid, stop=False, aeglustus=750):
+async def paar1_soitmine(pooramine:int, kiirus:int, kraadid:int, stop:bool=False,kiirendus:int=750, aeglustus:int=750):
+    """
+    Juhib SPIKE roboti mootorit, võimaldades määrata pööramise suunda, kiirust ja kraadide arvu.
+    See funktsioon on loodud, kuna SPIKE enda kutsung oli kohmakas.
+
+    ### Parameetrid:
+    - **pooramine** (`int`):
+        Väärtus vahemikus **-100 kuni 100**, mis määrab mootori pööramise suuna ja kiiruse.
+        - **Negatiivne** – pöörab vasakule
+        - **Positiivne** – pöörab paremale
+
+    - **kiirus** (`int`):
+        Mootori kiirus. Täpsed piirangud sõltuvad SPIKE dokumentatsioonist.
+
+    - **kraadid** (`int`):
+        Pööratavate kraadide arv:
+        - `0` – pöörab lõputult, kuni käsitsi peatatakse
+        - Positiivne väärtus – pöörab määratud kraadide võrra
+
+    - **stop** (`bool`, vaikimisi `False`):
+        Kui `True`, peatab mootori enne uue liikumise alustamist.
+
+    - **kiirendus** (`int`, vaikimisi `750`):
+        Kiirenduse väärtus. Vaata SPIKE dokumentatsioonist maksimaalset lubatud väärtust.
+
+    - **aeglustus** (`int`, vaikimisi `750`):
+        Aeglustuse väärtus. Vaata SPIKE dokumentatsioonist maksimaalset lubatud väärtust.
+
+    """
     if stop:
         motor_pair.stop(motor_pair.PAIR_1)
     if kraadid == 0:
         motor_pair.move(motor_pair.PAIR_1, pooramine, velocity=kiirus)
     else:
-        await motor_pair.move_for_degrees(motor_pair.PAIR_1, round(kraadid/0.6),pooramine,velocity=kiirus ,acceleration=750, deceleration=aeglustus)
-        """
-        motor.run_for_degrees(port.B, round(kraadid/0.6),kiirus ,acceleration=1500, deceleration=1500)
-        await motor.run_for_degrees(port.A,round(kraadid/0.6),kiirus*-1 ,acceleration=1500, deceleration=1500)"""
+        await motor_pair.move_for_degrees(motor_pair.PAIR_1, round(kraadid/TEISENDUS_TEGUR),pooramine,velocity=kiirus ,acceleration=kiirendus, deceleration=aeglustus)
 
-# ksutab mootori kraade et pöörata võimalikult täpselt
-# 100% tähendab et parem rattas pöörab ainsan, 50% tähendab et mõlemad põõravad ja 0% tähendab et vasak rattas pöörab(poor_prots_ratas_vask_par)
-async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=500, aeglustus=500, kiirus=1050):
+async def pooramine(poor_kraadid:int, vas_mot:int=50, par_mot:int=50, kiirendus:int=500, aeglustus:int=500, kiirus:int=1050):
     """
-    arvutab por_kraadide järgi mitu kraadi peavad mootorid liikuma soovitud nurga saamiseks
+    Juhib SPIKE roboti mootoreid, kasutades pöördenurki ja protsentuaalset võimsust,
+    et saavutada täpne pööramine.
 
-        :positiivne pooramine on vasakule!!!
-        :protsentide jaotamine kahtlane 50 50 töötab kõige paremini
-        :arvutab alguses mitu kraadi kumbki mootor pöörama peab
-        :pärast kontrollib kas on 50 50 pööre kui on siis paneb tegema
-        :kontrollib kui oalju on vaja vasakut ja paremat rattast pöörata ja arvutab aja järgi välja nende pöörde kiiruse (pikem pöörde tegev rattas pöörab ette antud kiiruse järgi)
-        :kui mingil põhjusel on vasaku ja parema ratta % töötamine valesti antud siis viskab ette vea teate
+    ### Parameetrid:
+    - **poor_kraadid** (`int`):
+        Pöördenurk kraadides.
+        - **Positiivne väärtus** – pöörab vasakule
+        - **Negatiivne väärtus** – pöörab paremale
+
+    - **vas_mot** (`int`, vaikimisi `50`):
+        Vasaku ratta võimsus protsentides (**0–100**).
+        - `0%` – ainult parem ratas pöörab
+        - `50%` – mõlemad rattad pööravad võrdselt
+        - `100%` – ainult vasak ratas pöörab
+
+    - **par_mot** (`int`, vaikimisi `50`):
+        Parema ratta võimsus protsentides (**0–100**).
+        - `0%` – ainult vasak ratas pöörab
+        - `50%` – mõlemad rattad pööravad võrdselt
+        - `100%` – ainult parem ratas pöörab
+
+    - **kiirendus** (`int`, vaikimisi `500`):
+        Mootori kiirenduse väärtus.
+
+    - **aeglustus** (`int`, vaikimisi `500`):
+        Mootori aeglustuse väärtus.
+
+    - **kiirus** (`int`, vaikimisi `1050`):
+        Maksimaalne mootori kiirus pööramise ajal.
+
+    ### **Tööloogika:**
+    1. Arvutab rataste pöördenurga, et saavutada soovitud pöördenurk.
+    2. Kui mõlemad rattad töötavad **50/50**, siis pöörab võrdselt.
+    3. Kui üks ratas töötab väiksema protsendiga, siis arvutab teise ratta kiiruse, et pööramine toimuks sünkroonis.
+    4. Kui vasaku ja parema ratta protsentide summa pole **100**, siis annab veateate.
+
+    ### **Vead:**
+    - Kui vasaku ja parema ratta protsentide summa pole täpselt **100**, siis väljastatakse veateade.
+
     """
 
-    # Arvuta rataste pööramise kraadides
-    pöörde_pikkus = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
-    mootori_kraadid = pöörde_pikkus/(3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679*RATTA_D*(1/360))
+    #arvutab pööramise kraadides
+    pöörde_pikkus = math.pi*2*RATASTE_VAH_KAUGUS*(poor_kraadid/360)
+    mootori_kraadid = pöörde_pikkus/(math.pi*RATTA_D*(1/360))
     parem_ratta_poor = (mootori_kraadid*par_mot/100)/0.6
     vasak_ratta_poor = (mootori_kraadid*vas_mot/100)/0.6
 
@@ -72,17 +141,49 @@ async def pooramine(poor_kraadid, vas_mot=50, par_mot=50, kiirendus=500, aeglust
         print("võimsused valesti jaotatud")
 
 async def varvi_kalib():
+    """
+    Kalibreerib värvisensori jaoks moodulite värvi, mõõtes mitmesuguseid värviandmeid ja salvestades need.
+
+    ### **Tööloogika:**
+    1. Kuvab ekraanil kalibreeritava missiooni numbri.
+    2. Ootab, kuni kasutaja vajutab vasakut nuppu.
+    3. Kogub 10 mõõtmist värvisensorilt ja arvutab keskmise väärtuse:
+        - **Punane**
+        - **Roheline**
+        - **Sinine**
+        - **Tugevus**
+    4. Salvestab keskmised väärtused kalibreerimisandmetesse.
+    5. Kuvab "ok?" ja ootab kinnitust või tagasilükkamist:
+        - **Parem nupp** – kinnitab kalibreerimise
+        - **Vasak nupp** – tühistab kalibreerimise
+
+    ### **Globaalmuutujad:**
+    - **varvi_andm** (`dict`):
+        Sõnastik, kuhu salvestatakse iga missiooni kalibreerimisandmed.
+        - Võti – missiooni number
+        - Väärtus – `[punane_kesk, roheline_kesk, sinine_kesk, tugevus_kesk]`
+
+    - **kalib_tehtud** (`bool`):
+        Märgib, kas kalibreerimine õnnestus (`True`) või katkestati (`False`).'
+
+    """
     global varvi_andm, kalib_tehtud
-    for i in range(1, missiooni_arv+1):
+
+    for i in range(1, missiooni_arv + 1):
         light_matrix.write(str(i))
+
+        # Oota, kuni vasak nupp vajutatakse
         while not button.pressed(button.LEFT):
             await runloop.sleep_ms(10)
         while button.pressed(button.LEFT):
             await runloop.sleep_ms(10)
+
+        # Kogub andmeid 10 korda ja arvutab keskmise
         punane_kogu_sum = 0
         roheline_kogu_sum = 0
         sinine_kogu_sum = 0
         tugevus_kogu_sum = 0
+
         for j in range(10):
             punane, roheline, sinine, tugevus = color_sensor.rgbi(port.D)
             punane_kogu_sum += punane
@@ -91,12 +192,16 @@ async def varvi_kalib():
             tugevus_kogu_sum += tugevus
             await runloop.sleep_ms(100)
 
-        punane_kesk = punane_kogu_sum/10
-        roheline_kesk = roheline_kogu_sum/10
-        sinine_kesk = sinine_kogu_sum/10
-        tugevus_kesk = tugevus_kogu_sum/10
-        varvi_andm[i] = [punane_kesk,roheline_kesk ,sinine_kesk ,tugevus_kesk]
+        # Arvuta keskmised väärtused
+        punane_kesk = punane_kogu_sum / 10
+        roheline_kesk = roheline_kogu_sum / 10
+        sinine_kesk = sinine_kogu_sum / 10
+        tugevus_kesk = tugevus_kogu_sum / 10
 
+        # Salvestab andmed
+        varvi_andm[i] = [punane_kesk, roheline_kesk, sinine_kesk, tugevus_kesk]
+
+    # Küsib kinnitust või tühistamist
     light_matrix.write("ok?")
     while True:
         if button.pressed(button.RIGHT):
@@ -105,32 +210,77 @@ async def varvi_kalib():
         elif button.pressed(button.LEFT):
             kalib_tehtud = False
             break
+
+    # Oota, kuni nupud vabastatakse
     while button.pressed(button.LEFT) or button.pressed(button.RIGHT):
         await runloop.sleep_ms(10)
 
-# tuvastab mis värvi moodul on peal kasutab vektori arvutust et teha kindlaks milline mooduli värvi vektori tulemus on lähim
+
 def varvi_tuvastus():
-    varv = color_sensor.rgbi(port.D)
+    """
+    Tuvastab, milline värvimoodul on all, kasutades vektorarvutust lähima sobivuse määramiseks.
+
+    ### **Tööloogika:**
+    1. Loeb värvisensorilt RGBI väärtused (punane, roheline, sinine, tugevus).
+    2. Arvutab iga kalibreeritud värviandmestiku ja hetkel loetud andmete vahelise kauguse.
+        - Kasutab **Eukleidese kaugust ruudus**.
+    3. Kui minimaalne kaugus on alla määratud läve, tagastab vastava värvimooduli numbri.
+    4. Kui kaugus on üle läve, tagastab `0` (ei tuvasta värvi).
+
+    ### **Tagastusväärtus:**
+    - **int** – tuvastatud värvimooduli number (1, 2, 3, …) või `0`, kui tuvastamine ebaõnnestub.
+
+    ### **Globaalmuutujad:**
+    - **varvi_andm** (`dict`):
+        Sõnastik, mis sisaldab kalibreeritud värviandmeid.
+        - Võti – missiooni number
+        - Väärtus – `[punane_kesk, roheline_kesk, sinine_kesk, tugevus_kesk]`
+
+    """
+    varv = color_sensor.rgbi(port.D)# Loeb värvisensorilt andmed
     ruut_vaartused = []
+
+    # Arvuta kaugused kalibreeritud andmetest
     for i in varvi_andm.keys():
         ruut_vaartused.append(kaugus_ruudus(varvi_andm[i], varv))
 
-    if(min(ruut_vaartused)<(50*50+50*50+50*50+50*50)):
-        return ruut_vaartused.index(min(ruut_vaartused))+1
+    # Kui minimaalne kaugus jääb alla määratud piiri, tagasta värvi ID
+    if min(ruut_vaartused) < (50 * 50 + 50 * 50 + 50 * 50 + 50 * 50):
+        return ruut_vaartused.index(min(ruut_vaartused)) + 1
     else:
         return 0
 
 async def soit_1():
+    """
+    Käivitab esimese missiooni, juhib roboti liikumist ja pööramist vastavalt ettenähtud ülesannetele.
+
+    ### Tööloogika:
+    1. Algsättimine: Liikumine ja pööramine.
+    2. Joondumine haiga ja koralliga: Liikumine määratud kraadide ja kiirusena.
+    3. Lõpusättimine: Valmistab mootori järgmise sõidu jaoks.
+
+    ### Sammud:
+    - Liikumine: 200 kraadi edasi, 40 kraadi pöördega.
+    - Joondumine haiga ja koralliga, samuti vajalikud pööramised.
+    - Valmistab mootori ette järgmise sõidu jaoks.
+
+    ### Globaalmuutujad:
+    - **motor**: Mootorite juhtimiseks.
+    - **paar1_soitmine** ja **pooramine**: Funktsioonid liikumiseks ja pööramiseks.
+
+    """
     await paar1_soitmine(0, 1050, 200)
     await pooramine(40)
+
     #algussättimne
     await paar1_soitmine(0, 1050, 1075)
     await motor.run_for_degrees(port.F, 100, 1000)
-    #await paar1_soitmine(0, 800, -100)
     await pooramine(-96)
+
     #lineup haile
     await paar1_soitmine(0, 1050, 650)
     await paar1_soitmine(0, 1050, -405)
+
     #lineup korallile
     await pooramine(145)
     await paar1_soitmine(0, 1050, -575)
@@ -139,12 +289,35 @@ async def soit_1():
     await paar1_soitmine(0, 1050, 300)
     await pooramine(-55)
     await paar1_soitmine(0, 1050, -1500)
+
     #paneb mootori teiseks sõiduks valmis
     motor.run_to_absolute_position(port.E, 300, -300)
     motor.stop(port.E)
+
 async def soit_2():
+    """
+    Käivitab teise missiooni, mille käigus robot liigub paadi purje juurde, varastab aarde ja viib sukelduja ära.
+
+    ### Tööloogika:
+    1. Liikumine ja pööramine paadi purje juurde.
+    2. Aarde ja sukelduja liikumisülesanded.
+    3. Valmistab mootori ette järgmise liikumiseks.
+
+    ### Sammud:
+    - Liikumine 910 kraadi edasi, pööramine 47 kraadi.
+    - Liikumine 300 kraadi edasi, pööramine veel 47 kraadi.
+    - Liikumine 1200 kraadi edasi aeglustusega.
+    - Mootor liigub 105 kraadi edasi, 350 kraadi pöördega.
+    - Tagasi liikumine ja valmistab mootori järgmise liikumiseks.
+
+    ### Globaalmuutujad:
+    - **motor**: Mootorite juhtimiseks.
+    - **paar1_soitmine** ja **pooramine**: Funktsioonid liikumiseks ja pööramiseks.
+
+    """
     motor.stop(port.E)
-    #läheb paadi purje ja aarde laegast varastama
+
+    #läheb paadi purje ja aarde laegast varastama ja viib sukelduja ära
     await paar1_soitmine(0, 1050, 910)
     await pooramine(47)
     await paar1_soitmine(0, 1050, 300)
@@ -158,29 +331,101 @@ async def soit_2():
     await paar1_soitmine(-13, -1050, 1750)
 
 async def soit_3():
+    """
+    Käivitab kolmanda missiooni, mille käigus robot viib hai ära, võtab 4 jala ja suundub teise kodu alale.
+
+    ### Tööloogika:
+    1. Liikumine ja pööramine hai viimiseks.
+    2. Liikumine 4 jala võtmiseks ja liikumine teise kodu alale.
+
+    ### Sammud:
+    - Liikumine 100 kraadi edasi, pööramine 65 kraadi.
+    - Liikumine 1400 kraadi edasi.
+    - Liikumine 4 jala eemaldamiseks ja liikumine teise kodu alale.
+
+    ### Globaalmuutujad:
+    - **motor**: Mootorite juhtimiseks.
+    - **paar1_soitmine** ja **pooramine**: Funktsioonid liikumiseks ja pööramiseks.
+
+    """
+
+    #viib hai ära
     await paar1_soitmine(0, 1050, 100)
     await pooramine(65)
     await paar1_soitmine(0, 1050, 1400)
+
+    # võtab 4 jala ära ja läheb teise kodu alasse
     await paar1_soitmine(0, 1050, -350)
     await pooramine(45)
-    await paar1_soitmine(0, 1050, 1800)
+    await paar1_soitmine(0, 1050, 1900)
     await pooramine(50)
     await paar1_soitmine(0, 1050, -700)
     await paar1_soitmine(0, 1050, 1100)
 
 async def soit_4():
+    """
+    Käivitab neljanda missiooni, mille käigus robot lükkab kala ära ja võtab vee proovi.
+
+    ### Tööloogika:
+    1. Liikumine kala ära lükkamiseks.
+    2. Liikumine vee proovi võtmiseks ja liikumine tagasi.
+
+    ### Sammud:
+    - Liikumine 200 kraadi edasi, pööramine -54 kraadi.
+    - Liikumine 2000 kraadi edasi, pööramine 58 kraadi.
+    - Liikumine 800 kraadi edasi, liikumine tagasi -530 kraadi.
+
+    ### Globaalmuutujad:
+    - **motor**: Mootorite juhtimiseks.
+    - **paar1_soitmine** ja **pooramine**: Funktsioonid liikumiseks ja pööramiseks.
+
+    """
+    #lükkab kala ära
     await paar1_soitmine(0, 1050, 200)
     await pooramine(-54)
     await paar1_soitmine(2, 1050, 2000)
     await pooramine(58)
+
+    # võtab ära vee proovi
     await paar1_soitmine(0, 1050, 800)
     await paar1_soitmine(0, 1050, -530)
 
-async def testid():
-    await pooramine(90)
 
 # peamine meetod mis kasutab teisi meetodeid et lahendada ülessandeid vaatab kas värvid on kalibreeritud ja kui ei ole siis kalibreerib ära
 async def soidu_tuvastus():
+    """
+    Peamine meetod, mis juhib ülesannete lahendamist värvituvastuse põhjal.
+
+    ### **Tööloogika:**
+    1. Kontrollib, kas värvid on kalibreeritud (`kalib_tehtud`).
+        - Kui EI OLE kalibreeritud → käivitab kalibreerimise (`varvi_kalib`).
+    2. Kui kalibreerimine on tehtud:
+        - Kontrollib, milline missioon on aktiivne (`varvi_tuvastus`).
+        - Kuvab aktiivse missiooni numbri LED-ekraanil (`light_matrix.write`).
+        - Kui missioon on tuvastatud ja vasak nupp on vajutatud:
+            - **1** → käivitab `soit_1()`
+            - **2** → käivitab `soit_2()`
+            - **3–5** → kuvab konsoolis teate "veel üks sõit?"
+        - Kui missioon puudub (`0`) → kuvab `0` LED-ekraanil.
+
+    ### **Globaalmuutujad:**
+    - **kalib_tehtud** (`bool`) – Kas värvid on kalibreeritud (`True` või `False`).
+    - **varvi_tuvastus** – Funktsioon, mis tuvastab hetkel oleva värvi põhjal missiooni numbri.
+    - **light_matrix** – LED-moodul, mis kuvab aktiivse missiooni numbri.
+    - **button** – Nuppude olekut jälgiv objekt.
+
+    ### **Kutsutavad meetodid:**
+    - `varvi_kalib()` – Kalibreerib värvisensorid.
+    - `soit_1()` – Käivitab esimese missiooni.
+    - `soit_2()` – Käivitab teise missiooni.
+    - `soit_3()` – Käivitab kolmanda missiooni.
+    - `soit_4()` – Käivitab neljanda missiooni.
+
+    ### **Vead ja erandid:**
+    - Kui kalibreerimine ebaõnnestub, võib värvituvastus anda vale tulemuse.
+    - Kui nuppude olekut ei registreerita õigesti, võib ülesannete käivitamine ebaõnnestuda.
+
+    """
     while True:
         #kontrollib kas on kalibreeritud
         if kalib_tehtud:
@@ -199,11 +444,11 @@ async def soidu_tuvastus():
             if (varvi_tuvastus() == 3):
                     light_matrix.write(str(3))
                     if(button.pressed(button.LEFT)):
-                        print('veel üks sõit?')
+                        await soit_3()
             if (varvi_tuvastus() == 4):
                     light_matrix.write(str(4))
                     if(button.pressed(button.LEFT)):
-                        print('veel üks soit?')
+                        await soit_4()
             if (varvi_tuvastus() == 5):
                     light_matrix.write(str(5))
                     if(button.pressed(button.LEFT)):
@@ -213,5 +458,4 @@ async def soidu_tuvastus():
             await varvi_kalib()
 
 #motor.run_to_absolute_position(port.E, 300, -300)
-#runloop.run(paar1_soitmine(0, -1050, -4500))
-runloop.run(soit_2())
+runloop.run(soit_3())
