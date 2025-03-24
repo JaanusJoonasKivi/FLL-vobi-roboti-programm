@@ -1,17 +1,5 @@
   # 1. moodul
-
-
-  ## Boonused
-
-
-  ## Probleemid
-
-
-  ## Miks sellise variandi tegime?
-
-
-  ## Muudatused
- **1. moodul (enne eelvooru)**
+  ## Ehitus ja eesmärgid
  
 See moodul korjab platsilt ühe krilli ja ühe proovidest, vabastab hai koopast ja lükkab üles
 korallipungad ning tuleb tagasi kodualasse
@@ -29,7 +17,25 @@ Punkte:
 
 Kui kaua võtab sõit aega: 17.01 (55 p), 17.48 (55 p), 17.32 (55 p)
 
+paigutamine platsil:
+
+<img src="roboti%20pildid/20250211_144552.jpg" alt="Alt Text" width="500">       <img src="roboti%20pildid/20250211_144557.jpg" alt="Alt Text" width="500">
+<img src="roboti%20pildid/20250211_144609.jpg" alt="Alt Text" width="500">
+
+  ## Boonused
+
+
+  ## Probleemid
+
+
+  ## Miks sellise variandi tegime?
+
+
+  ## Muudatused
+
+
   # 2. moodul
+  ## Ehitus ja eesmärgid
 **Uus (17.02.25) 2. moodul**
 
 Võtab kraakeni haardest kirstu, samal ajal tõstab masti, seejärel paneb robot Sukelduja korallrahu toele, tõstab õigepidiseks korallrahu.
@@ -46,6 +52,7 @@ Miks on uus moodul parem kui selle eelmine versioon?
 
 Algasend võistlusplatsil:
 
+<img src="roboti%20pildid/20250217_172351.jpg" alt="Alt Text" width="500">        <img src="roboti%20pildid/20250217_172401.jpg" alt="Alt Text" width="500">
 
 
   ## Boonused
@@ -67,6 +74,7 @@ Tegi liiga palju ülesandeid, mis muutus liiga keeruliseks, seetõttu ka ebatäp
 
 
   # 3. moodul
+  ## Ehitus ja eesmärgid
 
 
   ## Boonused
@@ -88,6 +96,7 @@ Ehitus kvaliteet on kehv, moodul ei töötanud. Pealegi oli seda väga raske pro
 
 
   # 4.moodul
+  ## Ehitus ja eesmärgid
 
 
   ## Boonused
@@ -103,6 +112,7 @@ Ehitus kvaliteet on kehv, moodul ei töötanud. Pealegi oli seda väga raske pro
 
 
    # 5. moodul?(Heiki palun seleta)
+   ## Ehitus ja eesmärgid
  
 
   ## Boonused
@@ -116,5 +126,3 @@ Ehitus kvaliteet on kehv, moodul ei töötanud. Pealegi oli seda väga raske pro
 
   ## Muudatused
 
-
-![test](https://drive.google.com/file/d/1iBMgmOASfIYK4jpipinbQNwxydI5zIna/view?usp=drive_link)
