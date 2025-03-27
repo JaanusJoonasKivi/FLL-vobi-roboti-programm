@@ -4,12 +4,6 @@
 See moodul korjab platsilt ühe krilli ja ühe proovidest, vabastab hai koopast ja lükkab üles
 korallipungad ning tuleb tagasi kodualasse
 
-Probleemid:
-	alguses kodualasse mahutamine 
-	võimalus, et unustame pneumaatikasüsteemi õhku pumbata
-Head küljed:
-	Töötab pneumaatikaga
-
 Algrõhk sellel moodulil on 2 bari või u 30 psi (ehk u 200 000 Pa, vist)
 
 Punkte:
@@ -23,13 +17,11 @@ paigutamine platsil:
 <img src="roboti%20pildid/20250211_144609.jpg" alt="Alt Text" width="500">
 
   ## Boonused
-
+Töötab pneumaatikaga
 
   ## Probleemid
-
-
-  ## Miks sellise variandi tegime?
-
+alguses kodualasse mahutamine 
+võimalus, et unustame pneumaatikasüsteemi õhku pumbata
 
   ## Muudatused
 
